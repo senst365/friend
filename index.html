@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>友誼大考驗 - 20道是非深度挑戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* 防止滾動條干擾 */
+        }
+        .reveal-anim {
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .correct-text { color: #16a34a; }
+        .wrong-text { color: #dc2626; }
+        .cursor-pointer-area { cursor: pointer; }
+        
+        /* 確保內容在小螢幕上不會被裁切 */
+        .content-safe-area {
+            max-height: 85vh;
+        }
+    </style>
+</head>
+<body class="bg-white transition-colors duration-700">
+
+    <div id="app" class="w-full h-full flex flex-col">
+        
+        <!-- 頂部進度條 -->
+        <div class="w-full bg-gray-200 h-2">
+            <div id="progress-bar" class="h-full bg-indigo-500 transition-all duration-300" style="width: 5%"></div>
+        </div>
+
+        <!-- 頂部資訊區 -->
+        <div class="pt-6 pb-2 px-8 flex justify-center">
+            <div id="header" class="text-xl md:text-2xl font-bold text-indigo-600 bg-indigo-50 px-6 py-2 rounded-full shadow-sm">
+                友誼情境討論 <span id="question-number" class="ml-2 text-indigo-400">1 / 20</span>
+            </div>
+        </div>
+
+        <!-- 主畫面區域：點擊此區域即可揭曉 -->
+        <div id="main-click-area" onclick="handleMainClick()" class="flex-1 flex flex-col items-center justify-center text-center cursor-pointer-area group px-4 overflow-hidden content-safe-area">
+            
+            <!-- 題目區域 -->
+            <div id="question-box" class="w-full max-w-5xl">
+                <p id="question-text" class="text-3xl md:text-6xl font-black text-gray-800 leading-snug">
+                    載入中...
+                </p>
+                <p id="click-hint" class="mt-6 text-gray-400 text-xl md:text-2xl animate-pulse group-hover:text-indigo-400">
+                    ( 思考一下，點擊畫面揭曉答案 )
+                </p>
+            </div>
+
+            <!-- 答案揭曉層 -->
+            <div id="answer-layer" class="hidden reveal-anim w-full max-w-5xl mt-4">
+                <div id="answer-icon" class="text-9xl md:text-[10rem] leading-none mb-4">⭕</div>
+                <div id="answer-tip" class="text-2xl md:text-4xl font-bold p-6 md:p-8 rounded-[2rem] bg-white border-4 border-dashed border-gray-200 text-gray-700 shadow-xl inline-block w-full">
+                    提示內容...
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 底部按鈕區 (固定在底部，確保不被裁切) -->
+        <div id="footer-actions" class="pb-10 pt-4 flex justify-center h-32">
+            <button id="next-btn" onclick="nextQuestion()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white text-3xl md:text-4xl font-black py-4 px-16 md:px-24 rounded-2xl shadow-2xl transition-all transform active:scale-95">
+                下一題 ⮕
+            </button>
+        </div>
+
+        <!-- 結算畫面 -->
+        <div id="result-screen" class="hidden absolute inset-0 bg-indigo-600 text-white flex flex-col items-center justify-center p-10 text-center z-50">
+            <div class="text-8xl md:text-9xl mb-8">🌟</div>
+            <h2 class="text-5xl md:text-7xl font-black mb-6">討論完成！</h2>
+            <p class="text-2xl md:text-4xl mb-12 opacity-90">你們都是懂得體貼他人、珍惜友誼的小達人！</p>
+            <button onclick="resetQuiz()" class="bg-white text-indigo-600 text-3xl md:text-4xl font-bold px-16 py-6 rounded-3xl shadow-2xl hover:bg-indigo-50 transition-all">
+                重新開始挑戰
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { text: "朋友不小心撞到我，我也要用力撞回去才公平。", answer: false, tip: "「原諒」是友情的接著劑，報復只會讓大家更受傷。" },
+            { text: "跟朋友借自動筆，雖然他說可以借，但我還是要愛惜使用。", answer: true, tip: "愛護別人的東西，下次別人才會更樂意借你。" },
+            { text: "當朋友在台上發表意見時，我應該安靜傾聽，不隨便插嘴。", answer: true, tip: "專心聽別人講話，就是一種溫柔的尊重。" },
+            { text: "如果朋友不想玩我發明的遊戲，我可以一直求他直到他答應。", answer: false, tip: "每個人都有說「不」的權利，強迫朋友會讓他壓力很大。" },
+            { text: "好朋友跟我說一個秘密，我可以告訴我最好的家人，這不算洩密。", answer: false, tip: "秘密就是秘密，沒有經過同意，對誰都不能說喔！" },
+            { text: "朋友考得比我好，雖然我有小小不開心，但還是可以真心祝賀他。", answer: true, tip: "能夠為朋友的成功感到高興，才是真正的友誼。" },
+            { text: "看到同學在哭，我可以在旁邊笑他愛哭鬼。", answer: false, tip: "嘲笑會讓傷口更痛，試著給他一點安靜的空間或關心。" },
+            { text: "分組時，就算沒有跟最好的朋友在一組，也可以跟新夥伴好好合作。", answer: true, tip: "多認識新朋友，你的友誼圈會變得更大、更豐富！" },
+            { text: "我可以用「如果不聽我的話，我就不跟你玩」來要求朋友。", answer: false, tip: "這不是交朋友，這是威脅。友誼應該是平等的。" },
+            { text: "發現朋友忘了帶橡皮擦，我可以主動借給他，不一定要等他開口。", answer: true, tip: "及時的幫助最讓人心動，你會成為受歡迎的人。" },
+            { text: "朋友穿了一件我覺得很醜的衣服，我應該「誠實」地告訴他很難看。", answer: false, tip: "「誠實」不等於「沒禮貌」。如果無法改變現狀，不評論也是一種體貼。" },
+            { text: "我的兩個好朋友在吵架，我一定要選一邊站，才代表我有義氣。", answer: false, tip: "你不必選邊站，可以試著當兩人的橋樑，或者保持中立。" },
+            { text: "朋友跟我玩得很瘋，但他開始摸我的頭讓我不舒服，我可以大聲說「我不喜歡，請停止」。", answer: true, tip: "身體界線很重要，即便對最好的朋友也可以溫柔而堅定地拒絕。" },
+            { text: "朋友因為難過而做錯事，雖然他很可憐，但我還是不應該幫他隱瞞傷害別人的行為。", answer: true, tip: "真正的朋友會幫助對方走回正軌，而不是陪他一起錯下去。" },
+            { text: "當我發現朋友在背後說我壞話，我應該馬上在網路上罵回去。", answer: false, tip: "冷靜下來私下溝通，或找老師協助，直接開罵會讓事情更糟。" },
+            { text: "如果大家都想玩鬼抓人，只有我不想玩，我應該直接擺臭臉給大家看。", answer: false, tip: "可以試著提出折衷方案，不需要用情緒影響大家。" },
+            { text: "朋友不小心把我的秘密說出去了，他跟我道歉後，我就應該立刻原諒他並像以前一樣好。", answer: false, tip: "原諒需要時間。你可以誠實告訴他，你現在還在受傷，需要一點時間修復。" },
+            { text: "朋友提議要去欺負一個我們都不喜歡的人，我不應該參與，甚至要提醒他這樣不好。", answer: true, tip: "這需要勇氣！真正的義氣是阻止朋友做壞事。" },
+            { text: "我有兩份點心，但我今天只想自己吃完，不分給朋友，這不代表我是一個壞朋友。", answer: true, tip: "分享是美德，但你有權決定自己的東西。學會拒絕與接受拒絕也很重要。" },
+            { text: "好朋友不小心弄壞我心愛的玩具，我雖然原諒他，但我還是可以感到難過並要求他一起想辦法修好。", answer: true, tip: "你可以表達情緒。原諒與難過是可以同時存在的，一起解決問題能讓友情更成熟。" }
+        ];
+
+        let currentIndex = 0;
+        let isRevealed = false;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(isCorrect) {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (isCorrect) {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1046, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } else {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        function loadQuestion() {
+            isRevealed = false;
+            const q = questions[currentIndex];
+            document.getElementById('question-text').innerText = q.text;
+            document.getElementById('question-number').innerText = `${currentIndex + 1} / ${questions.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+            
+            document.getElementById('question-box').classList.remove('hidden');
+            document.getElementById('answer-layer').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            document.body.style.backgroundColor = "white";
+        }
+
+        function handleMainClick() {
+            if (isRevealed) return;
+            revealAnswer();
+        }
+
+        function revealAnswer() {
+            isRevealed = true;
+            const q = questions[currentIndex];
+            playSound(q.answer);
+
+            document.getElementById('click-hint').classList.add('hidden');
+            const icon = document.getElementById('answer-icon');
+            icon.innerText = q.answer ? '⭕' : '❌';
+            icon.className = `text-9xl md:text-[10rem] leading-none mb-4 ${q.answer ? 'correct-text' : 'wrong-text'}`;
+            
+            document.getElementById('answer-tip').innerText = q.tip;
+            document.getElementById('answer-layer').classList.remove('hidden');
+            document.getElementById('next-btn').classList.remove('hidden');
+            
+            document.body.style.backgroundColor = q.answer ? "#f0fdf4" : "#fef2f2";
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex < questions.length) {
+                loadQuestion();
+                document.getElementById('click-hint').classList.remove('hidden');
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('result-screen').classList.remove('hidden');
+        }
+
+        function resetQuiz() {
+            currentIndex = 0;
+            document.getElementById('result-screen').classList.add('hidden');
+            loadQuestion();
+        }
+
+        window.onload = loadQuestion;
+    </script>
+</body>
+</html>
